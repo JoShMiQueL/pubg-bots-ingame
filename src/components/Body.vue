@@ -1,6 +1,13 @@
 <template lang="pug">
 .body
-  span.version v1.0.0
+  span.version v{{pkg.version}}
+  .new-version-found(v-if="foundNewVersion")
+    svg(xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' aria-hidden='true' role='img' width='1em' height='1em' preserveAspectRatio='xMidYMid meet' viewBox='0 0 16 16')
+      g(fill='currentColor')
+        path(d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412l-1 4.705c-.07.34.029.533.304.533c.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598c-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081l.082-.381l2.29-.287zM8 5.5a1 1 0 1 1 0-2a1 1 0 0 1 0 2z')
+    .new-version-found__message
+      | New version found!
+      a(class="hover:text-blue-200 text-blue-300 cursor-pointer" @click="shell.openExternal('https://github.com/JoShMiQueL/pubg-bots-ingame/releases/latest')") Download
   .result
     p.text-center(v-if="error") {{ error }}
     svg(v-if="!error && !isInfoLoaded && firstLoad" xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' aria-hidden='true' role='img' preserveAspectRatio='xMidYMid meet' viewBox='0 0 24 24')
@@ -17,8 +24,11 @@
   button.load-result(@click="load") Load Last Match
 </template>
 <script>
+import { shell } from 'electron'
 import { getConfig } from '../functions/getConfig'
+import { checkForNewVersion as CFNV } from '../functions/checkForNewVersion'
 import { ref } from 'vue'
+import pkg from '../../package.json'
 // import { writeConfig } from '../functions/writeConfig'
 import axios from 'axios'
 // import { getConfig } from '../functions/getConfig'
@@ -32,6 +42,7 @@ export default {
     const firstLoad = ref(true)
     const botsInLobby = ref(null)
     const error = ref(null)
+    const foundNewVersion = ref(false)
     async function requestLastMatch (playerName, apiKey = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIyYTdhNjkwMC01YWY5LTAxM2EtZGRjMC0wYmUwNDRmZWI1Y2EiLCJpc3MiOiJnYW1lbG9ja2VyIiwiaWF0IjoxNjQyNTU3NDg1LCJwdWIiOiJibHVlaG9sZSIsInRpdGxlIjoicHViZyIsImFwcCI6InFzcWIifQ.CwN8bLsiXPUiE3eR1rNFg_TSoztUlSs7Eht1sTn0-jQ') {
       let res
       try {
@@ -108,13 +119,27 @@ export default {
       }
       isInfoLoaded.value = true
     }
+    async function checkForNewVersion () {
+      try {
+        const newVersion = await CFNV()
+        const actualVersion = pkg.version
+        newVersion !== actualVersion && (foundNewVersion.value = true)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    checkForNewVersion()
     return {
+      pkg,
+      shell,
       getConfig,
       isInfoLoaded,
       firstLoad,
       botsInLobby,
       error,
-      load
+      foundNewVersion,
+      load,
+      checkForNewVersion
     }
   }
 }
@@ -174,5 +199,48 @@ button.load-result {
   @apply absolute;
   @apply opacity-30;
   font-size: 9px;
+}
+.new-version-found {
+  @apply absolute;
+  @apply opacity-30;
+  @apply text-white;
+  @apply flex;
+  @apply items-center;
+  @apply gap-1;
+  font-size: 9px;
+  top: 28px;
+  left: 36px;
+  @apply transition-opacity;
+  svg {
+    @apply text-red-500;
+  }
+  &:hover {
+    @apply opacity-60;
+    svg {
+      @apply text-red-400;
+    }
+    .new-version-found__message {
+      max-width: 100%;
+    }
+  }
+  // &:active {
+  //   @apply opacity-100;
+  //   svg {
+  //     @apply text-red-600;
+  //   }
+  // }
+  & > &__message {
+    // @apply bg-blue-500;
+    overflow: hidden;
+    max-height: 13px;
+    max-width: 0;
+    @apply flex;
+    gap: 3px;
+  }
+  // &.new-version-found--collapsed {
+  //   .new-version-found__message {
+  //     max-width: 0;
+  //   }
+  // }
 }
 </style>
