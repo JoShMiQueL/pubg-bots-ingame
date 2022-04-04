@@ -1,5 +1,7 @@
 # pubg-bots-ingame
 
+See how many bots you played with in recent games
+
 ## Project setup
 ```
 yarn install
